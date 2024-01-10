@@ -72,6 +72,10 @@ class ADPFManager {
         app_->activity->env->DeleteGlobalRef(obj_power_service_);
       }
 #if __ANDROID_API__ >= 33
+#elif __ANDROID_API >= 30
+      if (thermal_manager_ != nullptr) {
+        AThermal_releaseManager(thermal_manager_);
+      }
 #else
       if (obj_perfhint_service_ != nullptr) {
         app_->activity->env->DeleteGlobalRef(obj_perfhint_service_);
@@ -80,9 +84,6 @@ class ADPFManager {
         app_->activity->env->DeleteGlobalRef(obj_perfhint_session_);
       }
 #endif
-      if (thermal_manager_ != nullptr) {
-        AThermal_releaseManager(thermal_manager_);
-      }
     }
   }
   // Delete copy constructor since the class is used as a singleton.
@@ -117,7 +118,9 @@ class ADPFManager {
 
   // Method to retrieve thermal manager. The API is used to register/unregister
   // callbacks from C API.
+#if __ANDROID_API__ >= 30
   AThermalManager* GetThermalManager() { return thermal_manager_; }
+#endif
 
  private:
   // Update thermal headroom each sec.
@@ -128,7 +131,10 @@ class ADPFManager {
 
   // Ctor. It's private since the class is designed as a singleton.
   ADPFManager()
-      : thermal_manager_(nullptr),
+      :
+#if __ANDROID_API__ >= 30
+        thermal_manager_(nullptr),
+#endif
         thermal_status_(0),
         thermal_headroom_(0.f),
         obj_power_service_(nullptr),
@@ -154,9 +160,13 @@ class ADPFManager {
 
   void RegisterThreadIdsToHintSession();
 
+#if __ANDROID_API__ >= 30
   AThermalManager* thermal_manager_;
+#endif
+
   int32_t thermal_status_;
   float thermal_headroom_;
+
   std::chrono::time_point<std::chrono::high_resolution_clock> last_clock_;
   std::shared_ptr<android_app> app_;
   jobject obj_power_service_;

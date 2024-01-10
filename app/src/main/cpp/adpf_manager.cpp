@@ -30,21 +30,25 @@ void thermal_callback(void *data, AThermalStatus status) {
 }
 
 void nativeRegisterThermalStatusListener(JNIEnv *env, jclass cls) {
+#if __ANDROID_API__ >= 30
   auto manager = ADPFManager::getInstance().GetThermalManager();
   if (manager != nullptr) {
     auto ret = AThermal_registerThermalStatusListener(manager, thermal_callback,
                                                       nullptr);
     ALOGI("Thermal Status callback registerred to:%d", ret);
   }
+#endif
 }
 
 void nativeUnregisterThermalStatusListener(JNIEnv *env, jclass cls) {
+#if __ANDROID_API__ >= 30
   auto manager = ADPFManager::getInstance().GetThermalManager();
   if (manager != nullptr) {
     auto ret = AThermal_unregisterThermalStatusListener(
         manager, thermal_callback, nullptr);
     ALOGI("Thermal Status callback unregisterred to:%d", ret);
   }
+#endif
 }
 
 // Invoke the method periodically (once a frame) to monitor
@@ -72,11 +76,13 @@ void ADPFManager::SetApplication(android_app *app) {
 
 // Initialize JNI calls for the powermanager.
 bool ADPFManager::InitializePowerManager() {
+#if __ANDROID_API__ >= 30
   if (android_get_device_api_level() >= 31) {
     // Initialize the powermanager using NDK API.
     thermal_manager_ = AThermal_acquireManager();
     return true;
   }
+#endif
 
   JNIEnv *env = NativeEngine::GetInstance()->GetJniEnv();
 
