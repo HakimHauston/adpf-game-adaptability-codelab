@@ -132,15 +132,18 @@ class ADPFManager {
         thermal_status_(0),
         thermal_headroom_(0.f),
         obj_power_service_(nullptr),
+        get_thermal_headroom_(0)
 #if __ANDROID_API__ >= 33
 #else
+        , 
         preferred_update_rate_(0),
         obj_perfhint_service_(nullptr),
         obj_perfhint_session_(nullptr),
+        set_threads_(0),
         report_actual_work_duration_(0),
-        update_target_work_duration_(0),
+        update_target_work_duration_(0)
 #endif
-        get_thermal_headroom_(0) {
+        {
         last_clock_ = std::chrono::high_resolution_clock::now();
   }
 
@@ -171,6 +174,8 @@ class ADPFManager {
   jlong preferred_update_rate_;
   jobject obj_perfhint_service_;
   jobject obj_perfhint_session_;
+  jmethodID create_hint_session_;
+  jmethodID set_threads_;
   jmethodID report_actual_work_duration_;
   jmethodID update_target_work_duration_;
 #endif

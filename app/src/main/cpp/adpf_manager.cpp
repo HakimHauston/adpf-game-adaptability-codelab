@@ -178,7 +178,7 @@ bool ADPFManager::InitializePerformanceHintManager() {
 
   // Retrieve methods IDs for the APIs.
   jclass cls_perfhint_service = env->GetObjectClass(obj_perfhint_service_);
-  jmethodID mid_createhintsession =
+  create_hint_session_ =
       env->GetMethodID(cls_perfhint_service, "createHintSession",
                        "([IJ)Landroid/os/PerformanceHintManager$Session;");
   jmethodID mid_preferedupdaterate = env->GetMethodID(
@@ -192,7 +192,7 @@ bool ADPFManager::InitializePerformanceHintManager() {
 
   // Create Hint session for the thread.
   jobject obj_hintsession = env->CallObjectMethod(
-      obj_perfhint_service_, mid_createhintsession, array, DEFAULT_TARGET_NS);
+      obj_perfhint_service_, create_hint_session_, array, DEFAULT_TARGET_NS);
   if (obj_hintsession == nullptr) {
     ALOGI("Failed to create a perf hint session.");
   } else {
@@ -206,6 +206,8 @@ bool ADPFManager::InitializePerformanceHintManager() {
         cls_perfhint_session, "reportActualWorkDuration", "(J)V");
     update_target_work_duration_ = env->GetMethodID(
         cls_perfhint_session, "updateTargetWorkDuration", "(J)V");
+    set_threads_ = env->GetMethodID(
+        cls_perfhint_session, "setThreads", "([I)V");
   }
 
   // Free local references
@@ -255,7 +257,7 @@ void ADPFManager::EndPerfHintSession(jlong target_duration_ns) {
     APerformanceHint_updateTargetWorkDuration(hint_session_, target_duration_ns);
 #else
   if (obj_perfhint_session_) {
-    auto current_clock = std::chrono::high_resolution_clock::now();
+    auto perf_end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(perf_end - perf_start_).count();
     int64_t duration_ns = static_cast<int64_t>(duration);
     JNIEnv *env = NativeEngine::GetInstance()->GetJniEnv();
@@ -294,7 +296,7 @@ void ADPFManager::RegisterThreadIdsToHintSession() {
     }
     hint_session_ = APerformanceHint_createSession(hint_manager_, data, size, last_target_);
 #else
-    JNIEnv *env = cc::JniHelper::getEnv();
+    JNIEnv *env = NativeEngine::GetInstance()->GetJniEnv();
     std::size_t size = thread_ids_.size();
     jintArray array = env->NewIntArray(size);
     auto data = thread_ids_.data();
